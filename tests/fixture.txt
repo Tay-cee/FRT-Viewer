@@ -1,0 +1,135 @@
+Legal disclaimer
+This document is not a legal instrument. (synthetic test fixture)
+
+
+Table of contents placeholder
+
+                                                                                                                  FRT      Report                                                                            Valid as of: 2030/01/15
+                                                                                              Firearm      Reference      Number      (FRN):      900001                                                     Page: 3 / 6
+                                                                                                                 Make:      Acme Test Arms
+       Summary                                                                                    Model:       T-1      Carbine
+
+            Make:                                        Acme Test Arms
+            Model:                                       T-1 Carbine
+            Manufacturer:                                Acme Test Arms Ltd
+            Level:                                       Manufacturer Specifications and Commercial Customization
+            Type:                                        Rifle
+            Action:                                      Semi-Automatic
+            Country of Manufacturer:                     CANADA
+            Serial Numbering:                            See Note
+            Legal Classification:                        Restricted
+
+
+       Calibre,      Shots      and      Barrel      Length
+
+                                                                                                                 Legal Classification
+                                                                                                    Barrel
+           FRN                   Calibre                                                Shots       (mm)         Legal Authority                                                            Level                                  Barrel Type Code
+           900001 - 1            5.56MM NATO                                            5           470          Restricted                                                                 Manufacturer Specifications and
+                                                                                                                                                                                            Commercial Customization
+                                                                                                                 CC 84(1) "restricted firearm" para. (c)
+           900001-2              5.56MM NATO                                            30          470          Prohibited                                                                 Non-Commercial Customization           Conversion Unit
+                                                                                                                 PFR, Part 1, para. 87(a)
+           900001 - 3            6.5X55 SWEDISH MAUSER/12 GA X 2 3/4"                   2           635          Non-Restricted                                                             Manufacturer Specifications and
+                                                                                                                                                                                            Commercial Customization
+                                                                                                                 CC 2 "firearm"
+
+
+       Notes
+
+           Make                                        - "ACME" is marked on the left side of the receiver/frame.
+                                                       - Acme Test Arms Ltd is a fictional company used for testing.
+
+
+           Model
+                                                       - features include: a very long description that wraps onto a second line because
+                                                       it is longer than the column is wide.
+                                                       - second model note.
+
+
+
+
+                                                  Firearms Reference Table, National Specialized Services, Royal Canadian Mounted Police. All rights reserved, RCMP, 1998-2030.
+                                                                                                                  FRT      Report                                                                            Valid as of: 2030/01/15
+                                                                                              Firearm      Reference      Number      (FRN):      900001                                                     Page: 4 / 6
+
+           Also Known As/Product                       - this label wraps onto a later line in the real report and
+                                                       the parser must join it back together.
+           Code
+
+
+           Serial Number                               - serial number is marked on the receiver/frame.
+
+
+       Cross-References
+           FRN                     Make                                              Model                                            Manufacturer                                                  Type                         Action
+           900002                  Acme Test Arms                                    T-1 Pistol                                       Acme Test Arms Ltd                                            Handgun                      Semi-Automatic
+
+
+                                                  Firearms Reference Table, National Specialized Services, Royal Canadian Mounted Police. All rights reserved, RCMP, 1998-2030.
+                                                                                                                  FRT      Report                                                                            Valid as of: 2030/01/15
+                                                                                              Firearm      Reference      Number      (FRN):      900001                                                     Page: 5 / 6
+           900003                  Bogus Mfg                                         BX                                                                                                             Shotgun                      Multi-Barrel
+
+
+       Also      Known      As/Product      Code
+           T1
+
+           T-1C
+
+JP-T1
+
+
+       Year      Dates
+           2001
+
+           2002
+
+           No/Aucune Date
+
+
+       Importer
+           Example Importing Co.
+
+           Another Importer Inc.
+
+
+
+                                                  Firearms Reference Table, National Specialized Services, Royal Canadian Mounted Police. All rights reserved, RCMP, 1998-2030.
+                                                                                                                  FRT      Report                                                                            Valid as of: 2030/01/15
+                                                                                              Firearm      Reference      Number      (FRN):      900002                                                     Page: 6 / 6
+                                                                                                                 Make:      Acme Test Arms
+       Summary                                                                                    Model:       T-1      Pistol
+
+            Make:                                        Acme Test Arms
+            Model:                                       T-1 Pistol
+            Manufacturer:                                Acme Test Arms Ltd
+            Level:                                       Manufacturer Specifications and Commercial Customization
+            Type:                                        Handgun
+            Action:                                      Semi-Automatic
+            Country of Manufacturer:                     CANADA
+            Serial Numbering:
+            Legal Classification:                        Prohibited
+
+
+       Calibre,      Shots      and      Barrel      Length
+                                                   No Data
+
+       Notes
+
+           Canadian Law Comments                       - fictional record for testing.
+
+
+       Cross-References
+           FRN                     Make                                              Model                                            Manufacturer                                                  Type                         Action
+           900001                  Acme Test Arms                                    T-1 Carbine                                      Acme Test Arms Ltd                                            Rifle                        Semi-Automatic
+
+
+       Also      Known      As/Product      Code            No Data
+
+       Year      Dates                                      No Data
+
+       Importer                                             No Data
+
+
+                                                  Firearms Reference Table, National Specialized Services, Royal Canadian Mounted Police. All rights reserved, RCMP, 1998-2030.

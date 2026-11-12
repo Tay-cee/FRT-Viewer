@@ -1,0 +1,41 @@
+FRN 900001 (pages 3-5)
+  Make:                  Acme Test Arms
+  Model:                 T-1 Carbine
+  Manufacturer:          Acme Test Arms Ltd
+  Level:                 Manufacturer Specifications and Commercial Customization
+  Type:                  Rifle
+  Action:                Semi-Automatic
+  Country of Manufacturer: CANADA
+  Serial Numbering:      See Note
+  Legal Classification:  Restricted
+  CAL 1 | 5.56MM NATO | 5 | 470 | Restricted | CC 84(1) "restricted firearm" para. (c) | Manufacturer Specifications and Commercial Customization | 
+  CAL 2 | 5.56MM NATO | 30 | 470 | Prohibited | PFR, Part 1, para. 87(a) | Non-Commercial Customization | Conversion Unit
+  CAL 3 | 6.5X55 SWEDISH MAUSER/12 GA X 2 3/4" | 2 | 635 | Non-Restricted | CC 2 "firearm" | Manufacturer Specifications and Commercial Customization | 
+  NOTE [Make] "ACME" is marked on the left side of the receiver/frame.
+  NOTE [Make] Acme Test Arms Ltd is a fictional company used for testing.
+  NOTE [Model] features include: a very long description that wraps onto a second line because it is longer than the column is wide.
+  NOTE [Model] second model note.
+  NOTE [Also Known As/Product Code] this label wraps onto a later line in the real report and the parser must join it back together.
+  NOTE [Serial Number] serial number is marked on the receiver/frame.
+  XREF 900002 | Acme Test Arms | T-1 Pistol | Acme Test Arms Ltd | Handgun | Semi-Automatic
+  XREF 900003 | Bogus Mfg | BX |  | Shotgun | Multi-Barrel
+  AKA  T1
+  AKA  T-1C
+  AKA  JP-T1
+  YEAR 2001
+  YEAR 2002
+  YEAR No/Aucune Date
+  IMP  Example Importing Co.
+  IMP  Another Importer Inc.
+FRN 900002 (pages 6-6)
+  Make:                  Acme Test Arms
+  Model:                 T-1 Pistol
+  Manufacturer:          Acme Test Arms Ltd
+  Level:                 Manufacturer Specifications and Commercial Customization
+  Type:                  Handgun
+  Action:                Semi-Automatic
+  Country of Manufacturer: CANADA
+  Serial Numbering:      
+  Legal Classification:  Prohibited
+  NOTE [Canadian Law Comments] fictional record for testing.
+  XREF 900001 | Acme Test Arms | T-1 Carbine | Acme Test Arms Ltd | Rifle | Semi-Automatic

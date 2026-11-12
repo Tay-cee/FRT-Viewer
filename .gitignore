@@ -1,0 +1,34 @@
+# build output
+/frt
+*.o
+compile_commands.json
+.cache/
+
+# data: the RCMP report is large and RCMP copyright, the database is generated from it
+frt-report/*
+!frt-report/.gitkeep
+*.pdf
+*.db
+*.db-wal
+*.db-shm
+*.db-journal
+
+# images people attach to records through the bot
+/images/
+
+# bot secrets and Python environment
+.env
+bot/.venv/
+.venv/
+__pycache__/
+*.pyc
+
+# test output
+tests/out/
+
+# editors / OS
+*.swp
+*~
+.vscode/
+.idea/
+.DS_Store

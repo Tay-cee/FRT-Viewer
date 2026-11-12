@@ -1,0 +1,4 @@
+* text=auto eol=lf
+# synthetic report text: contains form feeds and very long lines
+tests/fixture.txt -diff linguist-generated
+tests/expected.txt linguist-generated
