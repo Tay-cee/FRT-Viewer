@@ -444,8 +444,11 @@ class PagedView(OwnedView):
         await interaction.response.defer()
 
 
-async def send_view(interaction: discord.Interaction, view: OwnedView, ephemeral: bool = False) -> None:
+async def send_view(interaction: discord.Interaction, view: OwnedView, ephemeral: bool = False,
+                    content: str | None = None) -> None:
     kwargs = {"embed": view.embed, "ephemeral": ephemeral}
+    if content:
+        kwargs["content"] = content
     if view.children:
         kwargs["view"] = view
     if files := view.files():
@@ -790,17 +793,34 @@ def open_images(rec: Record, owner_id: int, index: int = 0) -> RecordView:
     return view
 
 
-@image_group.command(name="add", description="Attach a picture to an FRN")
+MAX_IMAGE_FRNS = 25
+
+
+@image_group.command(name="add", description="Attach a picture to one or more FRNs")
 @app_commands.describe(frn="FRN number (or start typing a make/model)", image="PNG, JPEG, GIF or WebP",
-                       caption="Optional caption, e.g. 'left side markings'")
+                       caption="Optional caption, e.g. 'left side markings'",
+                       also="More FRNs to add the same picture to, separated by spaces or commas")
 @app_commands.autocomplete(frn=frn_autocomplete)
 async def image_add(interaction: discord.Interaction, frn: str, image: discord.Attachment,
-                    caption: app_commands.Range[str, 1, 200] | None = None):
+                    caption: app_commands.Range[str, 1, 200] | None = None,
+                    also: app_commands.Range[str, 1, 400] | None = None):
     if not can_upload(interaction):
         await interaction.response.send_message("Only bot admins can add images.", ephemeral=True)
         return
     rec = await resolve_frn(interaction, frn)
     if not rec:
+        return
+    extra = list(dict.fromkeys(int(x) for x in re.findall(r"\d+", also or "") if int(x) != rec.frn))
+    if len(extra) + 1 > MAX_IMAGE_FRNS:
+        await interaction.response.send_message(
+            f"That's {len(extra) + 1} FRNs; one upload can go to at most {MAX_IMAGE_FRNS}.", ephemeral=True)
+        return
+    found = await asyncio.to_thread(db.existing, extra)
+    missing = [n for n in extra if n not in found]
+    extra = [n for n in extra if n in found]
+    if missing:
+        await interaction.response.send_message(
+            "Not in the database: " + ", ".join(map(str, missing)) + ". Nothing was added.", ephemeral=True)
         return
     if image.size > IMAGE_MAX_MB * 1024 * 1024:
         await interaction.response.send_message(
@@ -809,7 +829,8 @@ async def image_add(interaction: discord.Interaction, frn: str, image: discord.A
     await interaction.response.defer(thinking=True)
     try:
         data = await image.read()
-        await asyncio.to_thread(store.add, rec.frn, data, caption, interaction.user.id)
+        for n in [rec.frn, *extra]:
+            await asyncio.to_thread(store.add, n, data, caption, interaction.user.id)
     except ValueError as e:
         await interaction.followup.send(f"Couldn't add `{clip(image.filename, 80)}`: {e}.", ephemeral=True)
         return
@@ -817,9 +838,10 @@ async def image_add(interaction: discord.Interaction, frn: str, image: discord.A
         log.exception("image upload failed")
         await interaction.followup.send(f"Couldn't save the image: {e}", ephemeral=True)
         return
-    log.info("image added to FRN %s by %s", rec.frn, interaction.user)
+    log.info("image added to FRN %s by %s", ", ".join(map(str, [rec.frn, *extra])), interaction.user)
     view = open_images(rec, interaction.user.id, index=10**9)
-    await send_view(interaction, view)
+    note = f"Also added to {len(extra)} more FRN{'s' * (len(extra) != 1)}: " + ", ".join(map(str, extra)) if extra else None
+    await send_view(interaction, view, content=note and clip(note, 2000))
 
 
 @image_group.command(name="view", description="Open an FRN's summary with its pictures")
