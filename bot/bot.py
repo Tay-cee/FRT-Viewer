@@ -58,6 +58,12 @@ CLASS_CHOICES = [
     app_commands.Choice(name=c, value=c)
     for c in ("Prohibited", "Restricted", "Non-Restricted", "Antique", 'CC 2 "firearm"/CC 84(3) Exempted')
 ]
+TYPE_CHOICES = [
+    app_commands.Choice(name=t, value=t)
+    for t in ("Rifle", "Handgun", "Shotgun", "Machine Gun", "Submachine Gun", "Combination Gun",
+              "Commercial Version", "Other", "Grenade Launcher", "Airsoft", "Cannon", "Mortar",
+              "Receiver Blank", "Paintball")
+]
 KIND_CHOICES = [app_commands.Choice(name=k, value=k) for k in ("added", "modified", "removed", "restored")]
 VIEW_TIMEOUT = 840
 
@@ -585,24 +591,39 @@ async def frn_cmd(interaction: discord.Interaction, query: str, private: bool = 
         await send_view(interaction, view, ephemeral=private)
 
 
+def value_autocomplete(column: str):
+    async def complete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+        if not db.exists():
+            return []
+        rows = await asyncio.to_thread(db.values, column, current)
+        return [app_commands.Choice(name=f"{v[:88]} ({n:,})", value=v[:100]) for v, n in rows]
+    return complete
+
+
 @bot.tree.command(name="search", description="Search the Firearms Reference Table")
 @app_commands.describe(text="Words that must all match make, model, manufacturer or an alias",
                        classification="Only firearms with this legal classification",
-                       type="Firearm type, e.g. Rifle, Handgun, Shotgun",
+                       type="Only firearms of this type",
+                       make="Only firearms with this make",
+                       manufacturer="Only firearms from this manufacturer",
                        include_removed="Also show FRNs that were dropped from the latest report",
                        private="Only you can see the reply")
-@app_commands.choices(classification=CLASS_CHOICES)
+@app_commands.choices(classification=CLASS_CHOICES, type=TYPE_CHOICES)
+@app_commands.autocomplete(make=value_autocomplete("make"), manufacturer=value_autocomplete("manufacturer"))
 async def search_cmd(interaction: discord.Interaction, text: str = "",
-                     classification: app_commands.Choice[str] | None = None, type: str | None = None,
-                     include_removed: bool = False, private: bool = False):
+                     classification: app_commands.Choice[str] | None = None,
+                     type: app_commands.Choice[str] | None = None, make: str | None = None,
+                     manufacturer: str | None = None, include_removed: bool = False, private: bool = False):
     if not await need_db(interaction):
         return
-    if not text.strip() and not classification and not type:
+    if not text.strip() and not classification and not type and not make and not manufacturer:
         await interaction.response.send_message("Give some search text or a filter.", ephemeral=True)
         return
     cls = classification.value if classification else None
-    results = await asyncio.to_thread(db.search, text.split(), cls, type, include_removed, 501)
-    desc = " ".join(x for x in (text, cls and f"[{cls}]", type and f"[{type}]") if x)
+    typ = type.value if type else None
+    results = await asyncio.to_thread(db.search, text.split(), cls, typ, include_removed, 501, make, manufacturer)
+    desc = " ".join(x for x in (text, make and f"[make: {make}]", manufacturer and f"[mfr: {manufacturer}]",
+                                cls and f"[{cls}]", typ and f"[{typ}]") if x)
     view = SearchView(f"Search: {desc}", results[:500], interaction.user.id, len(results) > 500)
     await send_view(interaction, view, ephemeral=private)
 

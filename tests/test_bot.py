@@ -96,6 +96,11 @@ async def main():
     check_view(sv, "search")
     assert "📷1" in sv.embed.description
     assert B.db.suggest("9000")[0]["frn"] == 900001
+    assert {r["frn"] for r in B.db.search([], make="acme test arms")} == {900001, 900002}
+    assert [r["frn"] for r in B.db.search([], make="Acme", type_="Rifle")] == [900001]
+    assert B.db.search([], manufacturer="nobody") == []
+    assert B.db.values("make", "acm") == [("Acme Test Arms", 2)]
+    assert [c.value for c in await B.value_autocomplete("manufacturer")(None, "test")] == ["Acme Test Arms Ltd"]
 
     for cmd in B.bot.tree.get_commands():
         cmd.to_dict(B.bot.tree)

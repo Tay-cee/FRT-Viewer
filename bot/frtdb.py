@@ -80,7 +80,8 @@ class FrtDB:
             return rec
 
     def search(self, words: list[str], classification: str | None = None,
-               type_: str | None = None, include_removed: bool = False, limit: int = 500) -> list[dict]:
+               type_: str | None = None, include_removed: bool = False, limit: int = 500,
+               make: str | None = None, manufacturer: str | None = None) -> list[dict]:
         sql = ["SELECT frn, make, model, manufacturer, type, action, legal_classification, removed"
                " FROM firearms WHERE 1"]
         args: list = []
@@ -95,8 +96,14 @@ class FrtDB:
             sql.append("AND legal_classification = ?")
             args.append(classification)
         if type_:
-            sql.append("AND type LIKE ?")
-            args.append(f"%{type_}%")
+            sql.append("AND type = ? COLLATE NOCASE")
+            args.append(type_)
+        for col, val in (("make", make), ("manufacturer", manufacturer)):
+            if val and val.strip():
+                val = val.strip()
+                sql.append(f"AND ({col} = ? COLLATE NOCASE OR (NOT EXISTS (SELECT 1 FROM firearms"
+                           f" WHERE {col} = ? COLLATE NOCASE) AND {col} LIKE ?))")
+                args += [val, val, f"%{val}%"]
         sql.append("ORDER BY make COLLATE NOCASE, model COLLATE NOCASE LIMIT ?")
         args.append(limit)
         with closing(self._conn()) as c:
@@ -112,6 +119,17 @@ class FrtDB:
         words = text.split()
         return self.search(words, limit=limit) if words else []
 
+    def values(self, column: str, text: str, limit: int = 25) -> list[tuple[str, int]]:
+        if column not in ("make", "manufacturer"):
+            raise ValueError(column)
+        text = text.strip()
+        with closing(self._conn()) as c:
+            rows = c.execute(
+                f"SELECT {column}, count(*) n FROM firearms WHERE removed = 0 AND {column} LIKE ?"
+                f" AND {column} <> '' GROUP BY {column} COLLATE NOCASE"
+                f" ORDER BY {column} NOT LIKE ?, n DESC, {column} COLLATE NOCASE LIMIT ?",
+                (f"%{text}%", f"{text}%", limit))
+            return [(r[0], r[1]) for r in rows]
 
     def reports(self) -> list[dict]:
         with closing(self._conn()) as c:
