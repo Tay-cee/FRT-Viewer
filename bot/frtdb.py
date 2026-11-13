@@ -119,6 +119,13 @@ class FrtDB:
         words = text.split()
         return self.search(words, limit=limit) if words else []
 
+    def existing(self, frns: list[int]) -> set[int]:
+        if not frns:
+            return set()
+        with closing(self._conn()) as c:
+            marks = ",".join("?" * len(frns))
+            return {r[0] for r in c.execute(f"SELECT frn FROM firearms WHERE frn IN ({marks})", frns)}
+
     def values(self, column: str, text: str, limit: int = 25) -> list[tuple[str, int]]:
         if column not in ("make", "manufacturer"):
             raise ValueError(column)

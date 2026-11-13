@@ -9,6 +9,7 @@ import sys
 import tempfile
 import zlib
 from pathlib import Path
+from types import SimpleNamespace
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
@@ -105,7 +106,39 @@ async def main():
     for cmd in B.bot.tree.get_commands():
         cmd.to_dict(B.bot.tree)
 
+    assert B.db.existing([900001, 900002, 123]) == {900001, 900002}
     assert B.store.totals() == (1, 1)
+    sent = []
+
+    class Resp:
+        done = False
+        def is_done(self): return self.done
+        async def send_message(self, *a, **k): self.done = True; sent.append(k.get("content") or a[0])
+        async def defer(self, **k): self.done = True
+
+    class Followup:
+        async def send(self, *a, **k): sent.append(k.get("content") or (a[0] if a else ""))
+
+    class Attachment:
+        size, filename = 100, "x.png"
+        async def read(self): return png()
+
+    def interaction():
+        i = SimpleNamespace(user=SimpleNamespace(id=7), response=Resp(), followup=Followup())
+        async def original(): return None
+        i.original_response = original
+        return i
+
+    B.can_upload = lambda i: True
+    await B.image_add.callback(interaction(), "900002", Attachment(), None, "900001, 900002 900001")
+    assert B.store.count(900002) == 1 and B.store.count(900001) == 2, sent
+    assert "Also added to 1 more FRN: 900001" in sent[-1], sent
+    await B.image_add.callback(interaction(), "900002", Attachment(), None, "900001 555")
+    assert "Not in the database: 555" in sent[-1] and B.store.count(900002) == 1, sent
+    for frn in (900001, 900002):
+        for i in B.store.list(frn):
+            if i.name != img.name:
+                B.store.remove(frn, i.name)
     B.store.remove(900001, img.name)
     assert B.store.list(900001) == []
     print(f"ok   bot: {pages} record pages, search, images, commands")

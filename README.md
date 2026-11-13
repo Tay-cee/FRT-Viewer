@@ -117,7 +117,7 @@ a photo to add one.
 
 | command | |
 |---|---|
-| `/image add frn: image: caption:` | Upload a PNG, JPEG, GIF or WebP (up to `FRT_IMAGE_MAX_MB`, default 8). |
+| `/image add frn: image: caption: also:` | Upload a PNG, JPEG, GIF or WebP (up to `FRT_IMAGE_MAX_MB`, default 8). `also:` takes more FRNs (e.g. `12345, 12346`) to add the same picture to, up to 25 in total. |
 | `/image view frn:` | Open a record's summary with its pictures. |
 | `/image caption frn: image: caption:` | Change or clear a caption. |
 | `/image remove frn: image:` | Delete an image (admins, or the person who added it). |
