@@ -1,4 +1,4 @@
-# BN-FRT-VIEWER: RCMP Firearms Reference Table → SQLite + Discord bot
+# FRT-VIEWER: RCMP Firearms Reference Table Viewer
 
 This project turns the RCMP **Firearms Reference Table (FRT) Report** PDF into a searchable
 SQLite database, and comes with a Discord bot for looking records up.
