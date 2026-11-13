@@ -74,6 +74,17 @@ class ImageStore:
             return 0
         return sum(1 for p in d.iterdir() if p.is_file() and p.suffix.lower() in EXTENSIONS)
 
+    def totals(self) -> tuple[int, int]:
+        if not self.root.is_dir():
+            return 0, 0
+        frns = images = 0
+        for d in self.root.iterdir():
+            if d.is_dir() and d.name.isdigit():
+                n = self.count(int(d.name))
+                frns += n > 0
+                images += n
+        return frns, images
+
     def add(self, frn: int, data: bytes, caption: str | None, added_by: int | None) -> Image:
         ext = sniff(data)
         if not ext:

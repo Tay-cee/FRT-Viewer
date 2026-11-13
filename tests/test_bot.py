@@ -100,6 +100,7 @@ async def main():
     for cmd in B.bot.tree.get_commands():
         cmd.to_dict(B.bot.tree)
 
+    assert B.store.totals() == (1, 1)
     B.store.remove(900001, img.name)
     assert B.store.list(900001) == []
     print(f"ok   bot: {pages} record pages, search, images, commands")

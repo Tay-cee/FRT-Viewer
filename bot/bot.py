@@ -669,11 +669,15 @@ async def stats_cmd(interaction: discord.Interaction):
     if not await need_db(interaction):
         return
     s = await asyncio.to_thread(db.stats)
+    with_images, n_images = await asyncio.to_thread(store.totals)
     e = discord.Embed(title="FRT database", color=0x34495E,
                       description=f"**{s['active']:,}** active FRNs · {s['removed']:,} removed · "
                                   f"{s['calibres']:,} calibre rows\nLatest report: **{s['latest']}**")
     e.add_field(name="By classification", value="\n".join(f"{n:,} · {esc(c)}" for c, n in s["by_class"]) or "—")
     e.add_field(name="By type", value="\n".join(f"{n:,} · {esc(t)}" for t, n in s["by_type"]) or "—")
+    pct = f" ({with_images / s['active']:.1%})" if s["active"] else ""
+    e.add_field(name="📷 Images", inline=False,
+                value=f"**{with_images:,}** firearms with images{pct} · {n_images:,} images total")
     e.set_footer(text=DISCLAIMER)
     await interaction.response.send_message(embed=e)
 
