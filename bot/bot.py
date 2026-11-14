@@ -474,6 +474,8 @@ class FrtBot(discord.Client):
             await self.tree.sync(guild=guild)
         else:
             await self.tree.sync()
+        if db.exists():
+            asyncio.create_task(asyncio.to_thread(db.calibres, ""))
         if AUTO_IMPORT:
             self.watch_reports.change_interval(minutes=WATCH_MINUTES)
             self.watch_reports.start()
@@ -603,29 +605,40 @@ def value_autocomplete(column: str):
     return complete
 
 
+async def calibre_autocomplete(interaction: discord.Interaction, current: str) -> list[app_commands.Choice[str]]:
+    if not db.exists():
+        return []
+    rows = await asyncio.to_thread(db.calibres, current)
+    return [app_commands.Choice(name=f"{v[:88]} ({n:,})", value=v[:100]) for v, n in rows]
+
+
 @bot.tree.command(name="search", description="Search the Firearms Reference Table")
 @app_commands.describe(text="Words that must all match make, model, manufacturer or an alias",
                        classification="Only firearms with this legal classification",
                        type="Only firearms of this type",
                        make="Only firearms with this make",
                        manufacturer="Only firearms from this manufacturer",
+                       calibre="Only firearms chambered for this ammunition, e.g. 308 WIN",
                        include_removed="Also show FRNs that were dropped from the latest report",
                        private="Only you can see the reply")
 @app_commands.choices(classification=CLASS_CHOICES, type=TYPE_CHOICES)
-@app_commands.autocomplete(make=value_autocomplete("make"), manufacturer=value_autocomplete("manufacturer"))
+@app_commands.autocomplete(make=value_autocomplete("make"), manufacturer=value_autocomplete("manufacturer"),
+                           calibre=calibre_autocomplete)
 async def search_cmd(interaction: discord.Interaction, text: str = "",
                      classification: app_commands.Choice[str] | None = None,
                      type: app_commands.Choice[str] | None = None, make: str | None = None,
-                     manufacturer: str | None = None, include_removed: bool = False, private: bool = False):
+                     manufacturer: str | None = None, calibre: str | None = None, include_removed: bool = False, private: bool = False):
     if not await need_db(interaction):
         return
-    if not text.strip() and not classification and not type and not make and not manufacturer:
+    if not text.strip() and not classification and not type and not make and not manufacturer and not calibre:
         await interaction.response.send_message("Give some search text or a filter.", ephemeral=True)
         return
     cls = classification.value if classification else None
     typ = type.value if type else None
-    results = await asyncio.to_thread(db.search, text.split(), cls, typ, include_removed, 501, make, manufacturer)
+    results = await asyncio.to_thread(db.search, text.split(), cls, typ, include_removed, 501, make, manufacturer,
+                                        calibre)
     desc = " ".join(x for x in (text, make and f"[make: {make}]", manufacturer and f"[mfr: {manufacturer}]",
+                                calibre and f"[calibre: {calibre}]",
                                 cls and f"[{cls}]", typ and f"[{typ}]") if x)
     view = SearchView(f"Search: {desc}", results[:500], interaction.user.id, len(results) > 500)
     await send_view(interaction, view, ephemeral=private)
