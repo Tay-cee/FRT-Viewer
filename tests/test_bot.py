@@ -106,6 +106,11 @@ async def main():
     for cmd in B.bot.tree.get_commands():
         cmd.to_dict(B.bot.tree)
 
+    assert [r["frn"] for r in B.db.search([], calibre="12 ga x 2 3/4\"")] == [900001]
+    assert [r["frn"] for r in B.db.search([], calibre="6.5X55 SWEDISH MAUSER")] == [900001]
+    assert [r["frn"] for r in B.db.search([], calibre="5.56")] == [900001]
+    assert B.db.search([], calibre="9MM LUGER") == []
+    assert B.db.calibres("5.56") == [("5.56MM NATO", 1)]
     assert B.db.existing([900001, 900002, 123]) == {900001, 900002}
     assert B.store.totals() == (1, 1)
     sent = []

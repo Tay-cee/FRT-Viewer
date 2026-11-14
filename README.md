@@ -100,10 +100,12 @@ directly and runs `./frt import` when a report needs importing.
 | command | |
 |---|---|
 | `/frn query:` | Opens a record. Suggestions appear as you type an FRN, make, model or alias. Buttons switch between Summary (with any images), Calibres, Notes, Cross-refs, AKA/Importers and History. A drop-down on the Cross-refs page opens a linked FRN. |
-| `/search text: make: manufacturer: classification: type:` | Paged results. `make` and `manufacturer` suggest values (with record counts) as you type. A drop-down on the results opens a record (and a button to go back to the results). |
+| `/search text: make: manufacturer: calibre: classification: type:` | Paged results. `make`, `manufacturer` and `calibre` suggest values (with record counts) as you type. A drop-down on the results opens a record (and a button to go back to the results). |
 | `/changes report: kind:` | What a report added, modified, removed or restored. |
 | `/reports`, `/stats` | Imported reports and database totals, including how many firearms have images. |
 | `/import file: force:` | Admins only. Imports a PDF from `frt-report/` (newest by default) and shows progress. |
+
+`calibre:` matches each calibre a firearm is listed with, including the parts of a combination gun ("308 WIN" finds `22 HORNET/308 WIN`). Text you type without picking a suggestion matches any calibre containing it.
 
 `private:True` on `/frn` and `/search` makes the reply visible only to you. Only the person who ran a command can press its buttons.
 

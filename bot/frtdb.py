@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import re
 import sqlite3
+import threading
 from contextlib import closing
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -11,6 +13,7 @@ SUMMARY_FIELDS = [
     ("serial_numbering", "Serial Numbering"), ("level", "Level"),
     ("legal_classification", "Legal Classification"),
 ]
+CALIBRE_SPLIT = re.compile(r"(?<!\d)/|/(?!\d)")
 
 
 @dataclass
@@ -38,6 +41,9 @@ class Record:
 class FrtDB:
     def __init__(self, path: str | Path):
         self.path = Path(path).resolve()
+        self._cal_key = None
+        self._cal: tuple[dict, list] = ({}, [])
+        self._cal_lock = threading.Lock()
 
     def _conn(self) -> sqlite3.Connection:
         c = sqlite3.connect(f"file:{self.path}?mode=ro", uri=True, timeout=10)
@@ -46,6 +52,36 @@ class FrtDB:
 
     def exists(self) -> bool:
         return self.path.exists()
+
+    def _calibres(self, c: sqlite3.Connection) -> tuple[dict, list]:
+        key = tuple(c.execute("SELECT count(*), max(id), max(imported_at) FROM reports").fetchone())
+        with self._cal_lock:
+            if key != self._cal_key:
+                strings: dict[str, set[str]] = {}
+                frns: dict[str, set[int]] = {}
+                names: dict[str, str] = {}
+                for cal, frn in c.execute("SELECT DISTINCT k.calibre, k.frn FROM calibres k"
+                                          " JOIN firearms f USING(frn) WHERE f.removed = 0 AND k.calibre <> ''"):
+                    for part in CALIBRE_SPLIT.split(cal):
+                        part = part.strip()
+                        if not part:
+                            continue
+                        k = part.upper()
+                        names.setdefault(k, part)
+                        strings.setdefault(k, set()).add(cal)
+                        frns.setdefault(k, set()).add(frn)
+                ranked = sorted(((names[k], len(v)) for k, v in frns.items()), key=lambda x: (-x[1], x[0]))
+                self._cal = (strings, ranked)
+                self._cal_key = key
+            return self._cal
+
+    def calibres(self, text: str, limit: int = 25) -> list[tuple[str, int]]:
+        t = " ".join(text.upper().split())
+        with closing(self._conn()) as c:
+            _, ranked = self._calibres(c)
+        hits = [x for x in ranked if t in x[0].upper()]
+        hits.sort(key=lambda x: not x[0].upper().startswith(t))
+        return hits[:limit]
 
 
     def record(self, frn: int) -> Record | None:
@@ -81,7 +117,8 @@ class FrtDB:
 
     def search(self, words: list[str], classification: str | None = None,
                type_: str | None = None, include_removed: bool = False, limit: int = 500,
-               make: str | None = None, manufacturer: str | None = None) -> list[dict]:
+               make: str | None = None, manufacturer: str | None = None,
+               calibre: str | None = None) -> list[dict]:
         sql = ["SELECT frn, make, model, manufacturer, type, action, legal_classification, removed"
                " FROM firearms WHERE 1"]
         args: list = []
@@ -104,9 +141,19 @@ class FrtDB:
                 sql.append(f"AND ({col} = ? COLLATE NOCASE OR (NOT EXISTS (SELECT 1 FROM firearms"
                            f" WHERE {col} = ? COLLATE NOCASE) AND {col} LIKE ?))")
                 args += [val, val, f"%{val}%"]
-        sql.append("ORDER BY make COLLATE NOCASE, model COLLATE NOCASE LIMIT ?")
-        args.append(limit)
         with closing(self._conn()) as c:
+            if calibre and calibre.strip():
+                strings, _ = self._calibres(c)
+                exact = strings.get(" ".join(calibre.upper().split()))
+                if exact:
+                    marks = ",".join("?" * len(exact))
+                    sql.append(f"AND frn IN (SELECT frn FROM calibres WHERE calibre IN ({marks}))")
+                    args += sorted(exact)
+                else:
+                    sql.append("AND frn IN (SELECT frn FROM calibres WHERE calibre LIKE ?)")
+                    args.append(f"%{calibre.strip()}%")
+            sql.append("ORDER BY make COLLATE NOCASE, model COLLATE NOCASE LIMIT ?")
+            args.append(limit)
             return [dict(x) for x in c.execute(" ".join(sql), args)]
 
     def suggest(self, text: str, limit: int = 25) -> list[dict]:
