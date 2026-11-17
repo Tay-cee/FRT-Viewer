@@ -526,20 +526,40 @@ class FrtBot(discord.Client):
 
     @tasks.loop(minutes=10)
     async def watch_reports(self) -> None:
-        if self.import_lock.locked() or not REPORT_DIR.is_dir():
+        # An exception escaping a tasks.loop stops it for good, so nothing may propagate from here.
+        try:
+            if self.import_lock.locked() or not REPORT_DIR.is_dir():
+                return
+            done = await asyncio.to_thread(db.imported_files) if db.exists() else set()
+            pdfs = []
+            for pdf in REPORT_DIR.glob("*.pdf"):
+                try:
+                    pdfs.append((pdf.stat().st_mtime, pdf))
+                except OSError:
+                    continue
+        except Exception:
+            log.exception("report watcher: could not scan %s", REPORT_DIR)
             return
-        done = await asyncio.to_thread(db.imported_files) if db.exists() else set()
-        for pdf in sorted(REPORT_DIR.glob("*.pdf"), key=lambda p: p.stat().st_mtime):
+        for mtime, pdf in sorted(pdfs):
             if pdf.name in done or pdf.name in self.attempted:
                 continue
-            if time.time() - pdf.stat().st_mtime < 120:
+            if time.time() - mtime < 120:
                 continue
             self.attempted.add(pdf.name)
-            async with self.import_lock:
-                log.info("auto-importing %s", pdf)
-                rc, text = await self.run_import(pdf)
+            try:
+                async with self.import_lock:
+                    log.info("auto-importing %s", pdf)
+                    rc, text = await self.run_import(pdf)
+            except Exception as e:
+                log.exception("auto-import of %s could not run", pdf.name)
+                rc, text = -1, f"{type(e).__name__}: {e}"
             log.info("import of %s finished rc=%s\n%s", pdf.name, rc, text)
-            await self.announce(text if rc == 0 else f"Import of {pdf.name} FAILED\n{text}")
+            if rc == 0 and "skipping" in text:
+                continue
+            try:
+                await self.announce(text if rc == 0 else f"Import of {pdf.name} FAILED\n{text}")
+            except Exception:
+                log.exception("could not announce import of %s", pdf.name)
 
     @watch_reports.before_loop
     async def _wait_ready(self) -> None:
@@ -759,13 +779,20 @@ async def import_cmd(interaction: discord.Interaction, file: str | None = None, 
         except discord.HTTPException:
             pass
 
-    async with bot.import_lock:
-        bot.attempted.add(target.name)
-        rc, text = await bot.run_import(target, force, progress)
+    try:
+        async with bot.import_lock:
+            bot.attempted.add(target.name)
+            rc, text = await bot.run_import(target, force, progress)
+    except Exception as e:
+        log.exception("/import of %s could not run", target.name)
+        rc, text = -1, f"{type(e).__name__}: {e}"
     status = "✅ Import finished" if rc == 0 else "❌ Import failed"
     await msg.edit(content=f"{status}: `{target.name}`\n```\n{clip(text, 1800)}\n```")
     if rc == 0 and "skipping" not in text:
-        await bot.announce(text)
+        try:
+            await bot.announce(text)
+        except Exception:
+            log.exception("could not announce import of %s", target.name)
 
 
 image_group = app_commands.Group(name="image", description="Pictures attached to FRT records")

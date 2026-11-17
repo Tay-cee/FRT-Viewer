@@ -210,7 +210,8 @@ static void do_calibre(Parser *p, const char *line)
     int ns = segments(line, seg, 16);
     long frn; int sub; const char *after;
     int first = 0;
-    if (parse_row_frn(t, &frn, &sub, &after)) {
+    if (ns && col_for(p->cal_cols, CAL_NCOLS, seg[0].col) == CAL_FRN &&
+        parse_row_frn(t, &frn, &sub, &after)) {
         Calibre c; memset(&c, 0, sizeof c);
         c.sub = sub;
         VEC_PUSH(p->cur.calibres, c);
@@ -298,7 +299,8 @@ static void do_xref(Parser *p, const char *line)
     int ns = segments(line, seg, 16);
     long frn;
     int first = 0;
-    if (parse_row_frn(t, &frn, NULL, NULL) && ns >= 2) {
+    if (ns >= 2 && col_for(p->xr_cols, XR_NCOLS, seg[0].col) == XR_FRN &&
+        parse_row_frn(t, &frn, NULL, NULL)) {
         XRef x; memset(&x, 0, sizeof x);
         x.ref_frn = frn;
         VEC_PUSH(p->cur.xrefs, x);
