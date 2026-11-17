@@ -42,6 +42,9 @@ sed -e 's#2030/01/15#2031/01/01#' fixture.txt > "$OUT/v3.txt"
 "$FRT" --db "$DB" import "$OUT/v3.txt" | grep -q "restored 1" || fail "restore"
 echo "ok   older refused, restore"
 
+"$FRT" --db "$DB" import --force fixture.txt | grep -q "report #1: 2 records" || fail "--force re-import of an older, already imported report"
+echo "ok   --force re-import with newer report present"
+
 "$FRT" --db "$DB" search acme t-1 2>/dev/null | grep -q 900002 || fail "search"
 echo "ok   search"
 echo "all tests passed"

@@ -98,21 +98,24 @@ static int import_one(sqlite3 *db, const char *file, int force, int jobs)
     printf("%s: FRT report valid as of %s\n", file, date);
 
     sqlite3_stmt *s;
-    sqlite3_prepare_v2(db, "SELECT id, valid_as_of FROM reports WHERE valid_as_of >= ?"
-                           " ORDER BY valid_as_of DESC LIMIT 1", -1, &s, NULL);
-    sqlite3_bind_text(s, 1, date, -1, SQLITE_STATIC);
     sqlite3_int64 existing = 0;
-    char newest[16] = "";
-    if (sqlite3_step(s) == SQLITE_ROW) {
-        snprintf(newest, sizeof newest, "%s", col(s, 1));
-        if (strcmp(newest, date) == 0) existing = sqlite3_column_int64(s, 0);
-    }
+    sqlite3_prepare_v2(db, "SELECT id FROM reports WHERE valid_as_of = ?", -1, &s, NULL);
+    sqlite3_bind_text(s, 1, date, -1, SQLITE_STATIC);
+    if (sqlite3_step(s) == SQLITE_ROW) existing = sqlite3_column_int64(s, 0);
     sqlite3_finalize(s);
-    if (newest[0] && !force) {
-        if (existing) printf("  already imported (report #%lld) - skipping. Use --force to re-import.\n",
-                             (long long)existing);
-        else printf("  database already has a newer report (%s) - skipping. Use --force to apply anyway.\n",
-                    newest);
+
+    char newest[16] = "";
+    sqlite3_prepare_v2(db, "SELECT max(valid_as_of) FROM reports WHERE valid_as_of > ?", -1, &s, NULL);
+    sqlite3_bind_text(s, 1, date, -1, SQLITE_STATIC);
+    if (sqlite3_step(s) == SQLITE_ROW) snprintf(newest, sizeof newest, "%s", col(s, 0));
+    sqlite3_finalize(s);
+
+    if (!force && newest[0]) {
+        printf("  database already has a newer report (%s) - skipping. Use --force to apply anyway.\n", newest);
+        return 0;
+    }
+    if (!force && existing) {
+        printf("  already imported (report #%lld) - skipping. Use --force to re-import.\n", (long long)existing);
         return 0;
     }
 
@@ -125,10 +128,16 @@ static int import_one(sqlite3 *db, const char *file, int force, int jobs)
     if (existing) {
         report_id = existing;
     } else {
-        sqlite3_prepare_v2(db, "INSERT INTO reports(valid_as_of, source_file) VALUES(?, ?)", -1, &s, NULL);
+        if (sqlite3_prepare_v2(db, "INSERT INTO reports(valid_as_of, source_file) VALUES(?, ?)",
+                               -1, &s, NULL) != SQLITE_OK) s = NULL;
         sqlite3_bind_text(s, 1, date, -1, SQLITE_STATIC);
         sqlite3_bind_text(s, 2, file, -1, SQLITE_STATIC);
-        sqlite3_step(s);
+        if (!s || sqlite3_step(s) != SQLITE_DONE) {
+            fprintf(stderr, "  could not add report: %s\n", sqlite3_errmsg(db));
+            sqlite3_finalize(s);
+            db_exec(db, "ROLLBACK");
+            return 1;
+        }
         sqlite3_finalize(s);
         report_id = sqlite3_last_insert_rowid(db);
     }
