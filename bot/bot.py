@@ -554,6 +554,8 @@ class FrtBot(discord.Client):
                 log.exception("auto-import of %s could not run", pdf.name)
                 rc, text = -1, f"{type(e).__name__}: {e}"
             log.info("import of %s finished rc=%s\n%s", pdf.name, rc, text)
+            if rc == 0 and "skipping" in text:
+                continue
             try:
                 await self.announce(text if rc == 0 else f"Import of {pdf.name} FAILED\n{text}")
             except Exception:
